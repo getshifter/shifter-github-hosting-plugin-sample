@@ -9,35 +9,30 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    env:
+      PACKAGE_NAME: "shifter-github-hosting-plugin-sample"
 
     steps:
       - uses: actions/checkout@v4
 
-      # composer.json がある場合のみ有効化する
-      # - name: composer install
-      #   run: composer install
+      - name: composer install
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction
 
       - name: get tag name
         id: tag
         run: echo "tagname=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: add version
-        env:
-          PACKAGE_NAME: "shifter-github-hosting-plugin-sample"
         run: sed -i -e "s/{release version}/${{ steps.tag.outputs.tagname }}/g" ${PACKAGE_NAME}.php
 
       - name: create archive
         env:
-          PACKAGE_NAME: "shifter-github-hosting-plugin-sample"
           FILES_TO_ARCHIVE: "*.php *.md LICENSE vendor/*"
         run: zip -r ${PACKAGE_NAME}.zip ${FILES_TO_ARCHIVE}
 
       - name: upload to github release
         uses: softprops/action-gh-release@v2
-        env:
-          PACKAGE_NAME: "shifter-github-hosting-plugin-sample"
         with:
           tag_name: ${{ steps.tag.outputs.tagname }}
           name: "${{ env.PACKAGE_NAME }} ${{ steps.tag.outputs.tagname }}"
           files: ${{ env.PACKAGE_NAME }}.zip
-
