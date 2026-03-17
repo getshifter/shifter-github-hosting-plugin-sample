@@ -8,38 +8,39 @@ Version: {release version}
 Author URI: https://getshifter.io/
 */
 
-$shifter_github_hosting_autoload = __DIR__ . '/vendor/autoload.php';
-
-if ( ! file_exists( $shifter_github_hosting_autoload ) ) {
-    add_action( 'admin_notices', function() {
-        printf(
-            '<div class="notice notice-error"><p>%s</p></div>',
-            esc_html__( 'Shifter GitHub hosting plugin sample requires Composer dependencies. Please run "composer install" in the plugin directory, or install the plugin from a GitHub Release zip.', 'shifter-github-hosting-plugin-sample' )
-        );
-    });
-    return;
-}
-
-require $shifter_github_hosting_autoload;
-
 add_action( 'admin_notices', function() {
     // get Shifter News
     $transient_key = 'shifter-news-posts';
-    if (false === ($posts = get_transient($transient_key))) {
-        $url = 'https://www.getshifter.io/feed/';
-        $res = YuzuruS\Rss\Feed::load($url);
-    
+    if ( false === ( $posts = get_transient( $transient_key ) ) ) {
+        $url  = 'https://www.getshifter.io/feed/';
+        $feed = fetch_feed( $url );
+
+        if ( is_wp_error( $feed ) ) {
+            return;
+        }
+
+        $items = $feed->get_items( 0, 10 );
         $posts = [];
-        foreach ($res['item'] as $r) {
+        foreach ( $items as $item ) {
             $posts[] = sprintf(
                 '<a href="%s" title="%s">%s</a>',
-                esc_url_raw($r['link']),
-                esc_attr($r['title']),
-                $r['title']
+                esc_url_raw( $item->get_permalink() ),
+                esc_attr( $item->get_title() ),
+                $item->get_title()
             );
         }
-        set_transient($transient_key, $posts, HOUR_IN_SECONDS);
+
+        if ( empty( $posts ) ) {
+            return;
+        }
+
+        set_transient( $transient_key, $posts, HOUR_IN_SECONDS );
     }
+
+    if ( empty( $posts ) ) {
+        return;
+    }
+
     $shifter_news = $posts[ mt_rand( 0, count( $posts ) - 1 ) ];
 
     printf(
