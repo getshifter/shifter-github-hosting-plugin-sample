@@ -7,7 +7,20 @@ Author: Shifter Team
 Version: {release version}
 Author URI: https://getshifter.io/
 */
-require __DIR__ . '/vendor/autoload.php';
+
+$shifter_github_hosting_autoload = __DIR__ . '/vendor/autoload.php';
+
+if ( ! file_exists( $shifter_github_hosting_autoload ) ) {
+    add_action( 'admin_notices', function() {
+        printf(
+            '<div class="notice notice-error"><p>%s</p></div>',
+            esc_html__( 'Shifter GitHub hosting plugin sample requires Composer dependencies. Please run "composer install" in the plugin directory, or install the plugin from a GitHub Release zip.', 'shifter-github-hosting-plugin-sample' )
+        );
+    });
+    return;
+}
+
+require $shifter_github_hosting_autoload;
 
 add_action( 'admin_notices', function() {
     // get Shifter News
